@@ -38,7 +38,7 @@ public class TestTokenizer {
             while (tokenizer.notEof()) {
                 tokens.add(tokenizer.readOne().getText());
             }
-            System.out.println(tokens);
+            assertEquals(tokens.toString(), "[int, a, =, 123, *, (, 456, -, 653, ), /, 2]");
         } catch (EndOfStatementException | EndOfFileException e) {
 
         }
