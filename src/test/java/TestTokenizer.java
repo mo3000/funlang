@@ -1,8 +1,5 @@
 import indi.suiwenbo.funlang.parser.EndOfFileException;
-import indi.suiwenbo.funlang.parser.EndOfStatementException;
-import indi.suiwenbo.funlang.parser.Token;
 import indi.suiwenbo.funlang.parser.Tokenizer;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -24,7 +21,7 @@ public class TestTokenizer {
                 tokens.add(tokenizer.readOne().getText());
             }
             assertEquals(tokens, List.of("int", "a", "=", "123", "+", "456"));
-        } catch (EndOfStatementException | EndOfFileException e) {
+        } catch (EndOfFileException e) {
 
         }
     }
@@ -39,7 +36,7 @@ public class TestTokenizer {
                 tokens.add(tokenizer.readOne().getText());
             }
             assertEquals(tokens.toString(), "[int, a, =, 123, *, (, 456, -, 653, ), /, 2]");
-        } catch (EndOfStatementException | EndOfFileException e) {
+        } catch (EndOfFileException e) {
 
         }
     }

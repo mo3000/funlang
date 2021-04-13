@@ -1,26 +1,31 @@
 package indi.suiwenbo.funlang.parser;
 
 public class Token {
-    private final String text;
+    private ValueType valueType;
+    private TokenType type;
+    private String text;
+    private int pos;
+    private int line;
 
-    private final int linePos;
-    private final int line;
-
-    public Token(String text, int linePos, int line) {
+    public Token(String text, int pos, int line) {
         this.text = text;
-        this.linePos = linePos;
+        this.pos = pos;
         this.line = line;
     }
 
-    public String getText() {
-        return text;
+    public ValueType getValueType() {
+        return valueType;
     }
 
-    public int getLinePos() {
-        return linePos;
+    public void setValueType(ValueType valueType) {
+        this.valueType = valueType;
     }
 
-    public int getLine() {
-        return line;
+    public TokenType getType() {
+        return type;
+    }
+
+    public void setType(TokenType type) {
+        this.type = type;
     }
 }

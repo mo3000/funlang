@@ -1,9 +1,7 @@
 package indi.suiwenbo.funlang.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static indi.suiwenbo.funlang.parser.Util.isPartOfOp;
+import static indi.suiwenbo.funlang.parser.Util.operators;
 
 public class Tokenizer {
     private String lastToken;
@@ -14,6 +12,9 @@ public class Tokenizer {
     private int linePosBegin;
     private int lineBegin;
     private int prevLineLen;
+
+    private final OpTree treeRoot = operators;
+    private OpTree treeNode;
 
     public int getPos() {
         return pos;
@@ -51,17 +52,30 @@ public class Tokenizer {
         return pos < text.length();
     }
 
-    public Token readOne() {
+    private enum CharType {
+        Word, Op, SemiColon;
+    }
+
+    public TextToken readOne() {
         skipSpace();
         if (!notEof()) {
             throw new EndOfFileException();
         }
         char c = currentChar();
-        int type = charType(c);
+        CharType type = charType(c);
+        StringBuilder cache = null;
         saveLinePos();
-        var cache = new StringBuilder();
+        int dotCount = 0;
+        if (type == CharType.Word) {
+            cache = new StringBuilder();
+        } else if (type == CharType.SemiColon) {
+            incrPos(c);
+            return new TextToken(";", linePosBegin, lineBegin);
+        } else if (type == CharType.Op) {
+            resetTree();
+        }
+        boolean isDigit = Character.isDigit(c);
         while (notEof()) {
-            pos++;
             if (isSkipable(c)) {
                 if (isNewline(c)) {
                     line++;
@@ -71,15 +85,47 @@ public class Tokenizer {
                 break;
             } else if (c == ';') {
                 break;
-            }
-            if (charType(c) != type) {
-                putBack(c);
+            } else if (c == '.') {
+                if (!isDigit) {
+                    break;
+                }
+                dotCount++;
+                if (dotCount > 1) {
+                    break;
+                }
+            } else if (charType(c) != type) {
                 break;
             }
-            cache.append(c);
+            if (cache != null) {
+                cache.append(c);
+            } else {
+                if (!treeNode.has(c)) {
+                    throw new ParseError("unexpected char `" + c + '`', linePos, line);
+                }
+                treeNode = treeNode.get(c);
+                if (!treeNode.hasNext()) {
+                    break;
+                }
+            }
+            pos++;
             c = currentChar();
         }
-        return new Token(cache.toString(), linePosBegin, lineBegin);
+        if (type == CharType.Word) {
+            return new TextToken(cache.toString(), linePosBegin, lineBegin);
+        } else {
+            assert type == CharType.Op;
+            if (!treeNode.acceptable()) {
+                throw new ParseError(
+                    "unknown operator near: " + text.substring(linePos > 5 ? linePos - 5 : 0, linePos + 1),
+                    linePos, line);
+            }
+            String text = treeNode.accept();
+            return new TextToken(text, linePosBegin, lineBegin);
+        }
+    }
+
+    private void resetTree() {
+        treeNode = treeRoot;
     }
 
     private void saveLinePos() {
@@ -97,13 +143,13 @@ public class Tokenizer {
         }
     }
 
-    private int charType(char c) {
+    private CharType charType(char c) {
         if (Character.isAlphabetic(c) || Character.isDigit(c) || c == '_') {
-            return 1;
+            return CharType.Word;
         } else if (isPartOfOp(c)) {
-            return 2;
+            return CharType.Op;
         } else if (c == ';') {
-            return 3;
+            return CharType.SemiColon;
         }
         throw new RuntimeException("invalid char c: `" + c + '`');
     }
@@ -114,7 +160,7 @@ public class Tokenizer {
 
     private void skipSpace() {
         char c = currentChar();
-        while (notEof() && isSkipable(c) || c == ';') {
+        while (notEof() && isSkipable(c)) {
             incrPos(c);
             c = currentChar();
         }

@@ -9,17 +9,28 @@ public class Util {
     private static final String[] operator = {
         "+", "-", "*", "/", "+=", "-=", "*=", "/=",
         "=", "==", "!=", "<", ">", "<=", ">=", ">>",
-        "<<", "!", "(", ")", "{", "}", "[", "]"
+        "<<", "!", "(", ")", "{", "}", "[", "]", ".",
+        "=>", ","
     };
 
-    private static Set<Character> opParts;
+    private static final String[] predef = {
+        "while", "if", "else", "for", "const", "let",
+        "int", "string", "function", "float", "void", "class",
+        "interface", "public", "private"
+    };
+
+    private static final Set<Character> opParts;
+
+    public static final OpTree operators;
 
     static {
         opParts = new HashSet<>();
+        operators = new OpTree();
         for (String str : operator) {
             for (Character c : str.toCharArray()) {
                 opParts.add(c);
             }
+            operators.setPath(str);
         }
     }
 
