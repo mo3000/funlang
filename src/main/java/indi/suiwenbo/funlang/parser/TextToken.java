@@ -28,4 +28,24 @@ public class TextToken {
     public int getLine() {
         return line;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TextToken textToken = (TextToken) o;
+
+        if (linePos != textToken.linePos) return false;
+        if (line != textToken.line) return false;
+        return text.equals(textToken.text);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = text.hashCode();
+        result = 31 * result + linePos;
+        result = 31 * result + line;
+        return result;
+    }
 }

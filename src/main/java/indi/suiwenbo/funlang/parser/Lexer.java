@@ -1,8 +1,10 @@
 package indi.suiwenbo.funlang.parser;
 
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import static indi.suiwenbo.funlang.parser.Util.matchPair;
 
 
 public class Lexer {
@@ -16,22 +18,11 @@ public class Lexer {
         rawTokens = new ArrayList<>();
     }
 
-    public void recognize(TextToken token) {
-        String text = token.getText();
-        if (Character.isDigit(text.charAt(0))) {
-            if (IntegerPat.matcher(text).find()) {
-                System.out.println(text + "is int");
-            } else {
-                throw new ParseError("invalid text: " + text, token.getLinePos(), token.getLine());
-            }
-        }
-    }
-
     public void add(TextToken token) {
         rawTokens.add(token);
     }
 
-    public void reset() {
+    public void clear() {
         rawTokens.clear();
     }
 
@@ -39,11 +30,14 @@ public class Lexer {
         System.out.println(rawTokens);
     }
 
-    public void recogize() {
-        for (int i = 0; i < rawTokens.size();) {
+    public List<TextToken> getRawTokens() {
+        return rawTokens;
+    }
 
-            i++;
-        }
+
+    public int matchParen(int begin, String left) {
+        assert rawTokens.get(begin).getText().equals(left);
+        return matchPair(rawTokens, begin);
     }
 
 

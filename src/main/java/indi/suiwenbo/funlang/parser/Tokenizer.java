@@ -91,7 +91,7 @@ public class Tokenizer {
                 }
                 dotCount++;
                 if (dotCount > 1) {
-                    break;
+                    throw new ParseError("unexpected `.`", linePos, line);
                 }
             } else if (charType(c) != type) {
                 break;
@@ -104,10 +104,12 @@ public class Tokenizer {
                 }
                 treeNode = treeNode.get(c);
                 if (!treeNode.hasNext()) {
+                    //c is acceptable
+                    incrPos(c);
                     break;
                 }
             }
-            pos++;
+            incrPos(c);
             c = currentChar();
         }
         if (type == CharType.Word) {
