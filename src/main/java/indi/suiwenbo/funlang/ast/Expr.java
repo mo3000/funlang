@@ -20,7 +20,7 @@ public class Expr implements AstNode {
     private Map<String, AstNode> localSymbolTable;
     private Map<String, AstNode> __this ;
     private String image;
-    private boolean isIdConst = false;
+    private boolean isConst = false;
 
     public Expr(List<TextToken> rawTokens) {
         this.rawTokens = rawTokens;
@@ -93,7 +93,7 @@ public class Expr implements AstNode {
                     if (localSymbolTable.containsKey(idname)) {
                         throw new ParseError("id with name: " + idname + " exists", t.getLinePos(), t.getLine());
                     }
-                    localSymbolTable.put(idname, expr.getAssignmentExpr());
+                    localSymbolTable.put(idname, expr.parseAssignmentExpr());
                     i = to + 1;
                 }
                 default -> throwError(t, "invalid token " + t.getText());
@@ -130,10 +130,6 @@ public class Expr implements AstNode {
         } else {
             setType(AstType.IDDecl);
         }
-    }
-
-    private void parseRval(int from) {
-
     }
 
     private TypeValue parseTypeText(List<TextToken> typeText) {
@@ -269,8 +265,96 @@ public class Expr implements AstNode {
         return rawTokens.get(i);
     }
 
-    private AstNode getAssignmentExpr() {
-        return null;
+    private AstNode parseAssignmentExpr() {
+        int pos = 0;
+        int typeDefAt = -1;
+        var text = rawTokens.get(pos).getText();
+        //fixme this "=" may be in template
+        while (pos < rawTokens.size() && !text.equals("=")) {
+            if (text.equals(":")) {
+                typeDefAt = pos;
+            }
+            pos++;
+        }
+        if (typeDefAt > 0) {
+            parseTypeExpect(typeDefAt, pos);
+        }
+        pos++;
+        assert pos < rawTokens.size();
+        parseRawTokens(pos, rawTokens.size());
+        return this;
+    }
+
+    private void parseTypeExpect(int start, int end) {
+        //todo
+    }
+
+    private Primitive parsePrimitiveNumberVal(String number) {
+        var p = new Primitive();
+        if (number.contains(".")) {
+            // is float
+            p.setValue(PrimitiveValueType.Float, Double.valueOf(number));
+        } else {
+            p.setValue(PrimitiveValueType.Int, Long.valueOf(number));
+        }
+        return p;
+    }
+
+    private void parseRawTokens(int start, int end) {
+        List<AstNode> stack = new ArrayList<>();
+        List<Operator> opStack = new ArrayList<>();
+        for (int i = start; i < end;) {
+            var token = rawTokens.get(i);
+            switch (token.getText()) {
+                case "(" -> {
+                    opStack.add(new Paren("("));
+                    i++;
+                }
+                case ")" -> {
+                    while (!opStack.isEmpty()) {
+                        Operator current = opStack.remove(opStack.size() - 1);
+                        if (current.isParen()) break;
+                        stack.add(current);
+                    }
+                }
+                case "+", "-", "*", "/", ">", "<", "%" -> {
+                    //todo add more op
+                    Operator op = new Operator(token.getText());
+                    if (!opStack.isEmpty()) {
+                        Operator last = opStack.get(opStack.size() - 1);
+                        if (op.greaterThan(last)) {
+                            stack.add(op);
+                            stack.add(last);
+                            opStack.remove(opStack.size() - 1);
+                            while (!opStack.isEmpty()) {
+                                last = opStack.remove(opStack.size() - 1);
+                                stack.add(last);
+                            }
+                        } else {
+                            // keep adding op to opStack while <=
+                            opStack.add(op);
+                        }
+                    } else {
+                        opStack.add(op);
+                    }
+                    i++;
+                }
+                default -> {
+                    // is number or func call
+                    if (token.isNumber()) {
+                        var p = parsePrimitiveNumberVal(token.getText());
+                        stack.add(p);
+                        i++;
+                    }
+                    //todo else if is id
+                    //todo else if is func call
+                }
+            }
+            while (!opStack.isEmpty()) {
+                Operator last = opStack.remove(opStack.size() - 1);
+                stack.add(last);
+            }
+        }
     }
 
     public String getDeclName() {
@@ -299,5 +383,8 @@ public class Expr implements AstNode {
     private List<TextToken> subNodes(int from, int to) {
         return rawTokens.subList(from, to);
     }
+
+
+
 
 }

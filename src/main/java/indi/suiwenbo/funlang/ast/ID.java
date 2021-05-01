@@ -33,6 +33,6 @@ public class ID implements AstNode {
 
     @Override
     public void parse() {
-
+        throw new RuntimeException();
     }
 }

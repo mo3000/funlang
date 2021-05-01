@@ -29,6 +29,15 @@ public class TextToken {
         return line;
     }
 
+    public boolean isNumber() {
+        for (char c : text.toCharArray()) {
+            if (!Character.isDigit(c) && c != '.') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
